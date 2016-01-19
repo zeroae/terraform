@@ -47,6 +47,8 @@ func resourceArmLocalNetworkGateway() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+
+			"tags": tagsSchema(),
 		},
 	}
 }
@@ -58,6 +60,7 @@ func resourceArmLocalNetworkGatewayCreate(d *schema.ResourceData, meta interface
 	location := d.Get("location").(string)
 	resGroup := d.Get("resource_group_name").(string)
 	ipAddress := d.Get("gateway_address").(string)
+	tags := d.Get("tags").(map[string]interface{})
 
 	// fetch the 'address_space_prefixes:
 	prefixes := []string{}
@@ -74,6 +77,7 @@ func resourceArmLocalNetworkGatewayCreate(d *schema.ResourceData, meta interface
 			},
 			GatewayIPAddress: &ipAddress,
 		},
+		Tags: expandTags(tags),
 	})
 	if err != nil {
 		return fmt.Errorf("Error creating Azure ARM Local Network Gateway '%s': %s", name, err)
@@ -112,6 +116,8 @@ func resourceArmLocalNetworkGatewayRead(d *schema.ResourceData, meta interface{}
 		prefs = ps
 	}
 	d.Set("address_space", prefs)
+
+	flattenAndSetTags(d, resp.Tags)
 
 	return nil
 }
