@@ -8,7 +8,7 @@ description: |-
 
 # gcs
 
-Stores the state at a given patch in a given bucket on [Google Storage bucket](https://cloud.google.com/storage/docs/overview).
+Stores the state as a given key in a given bucket on [Google Cloud Storage](https://cloud.google.com/storage/).
 
 -> **Note:** Passing credentials directly via config options will
 make them included in cleartext inside the persisted state.
@@ -20,8 +20,8 @@ Use of environment variables or config file is recommended.
 terraform remote config \
 	-backend=gcs \
 	-backend-config="bucket=terraform-state-prod" \
-	-backend-config="path=testState" \
-	-backend-config="project=myproject"
+	-backend-config="path=network/terraform.tfstate" \
+	-backend-config="project=goopro"
 ```
 
 ## Example Referencing
@@ -31,11 +31,12 @@ resource "terraform_remote_state" "foo" {
 	backend = "gcs"
 	config {
 		bucket = "terraform-state-prod"
-		path = "testState"
-		project = "myproject"
+		path = "network/terraform.tfstate"
+		project = "goopro"
 	}
 }
 ```
+
 
 ## Configuration variables
 
