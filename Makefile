@@ -77,6 +77,7 @@ generate:
 	  go get -u golang.org/x/tools/cmd/stringer; \
 	fi
 	go generate $$(go list ./... | grep -v /vendor/)
+	go fmt command/internal_plugin_list.go
 
 fmt:
 	gofmt -w .
