@@ -109,7 +109,7 @@ func (c *Config) Discover() error {
 
 	// Finally, we'll fill in any internal plugins that haven't already been
 	// discovered on disk.
-	for name, _ := range command.Providers {
+	for name, _ := range command.InternalProviders {
 		if _, found := c.Providers[name]; !found {
 			cmd, err := command.BuildPluginCommandString("provider", name)
 			if err != nil {
@@ -118,7 +118,7 @@ func (c *Config) Discover() error {
 			c.Providers[name] = cmd
 		}
 	}
-	for name, _ := range command.Provisioners {
+	for name, _ := range command.InternalProvisioners {
 		if _, found := c.Provisioners[name]; !found {
 			cmd, err := command.BuildPluginCommandString("provisioner", name)
 			if err != nil {
