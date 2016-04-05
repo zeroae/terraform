@@ -168,10 +168,7 @@ func discoverTypesInPath(path, typeID, typeName string) ([]plugin, error) {
 		return pluginTypes, err
 	}
 
-	log.Printf("%#v", dirs)
-
 	for _, dir := range dirs {
-		log.Printf("Searching directory %s", dir)
 		fset := token.NewFileSet()
 		goPackages, err := parser.ParseDir(fset, dir, nil, parser.AllErrors)
 		if err != nil {
