@@ -1,3 +1,4 @@
+//go:generate go run ./scripts/generate-plugins.go
 package main
 
 import (
