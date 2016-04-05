@@ -60,14 +60,13 @@ func main() {
 
 type plugin struct {
 	Package    string // This plugin's package name (aws)
-	PluginName string // Name of plugin (aws)
+	PluginName string // Name of plugin (aws); important if there is a dash
 	TypeName   string // Type of plugin (provider)
-	Path       string // Path relative to packer root (provider/aws)
+	Path       string // Path relative to terraform builtin (provider/aws)
 	ImportName string // PluginName+TypeName (awsprovider)
 }
 
-// makeMap creates a map named Name with type packer.Name that looks something
-// like this:
+// makeProviderMap creates a map of providers like this:
 //
 // var InternalProviders = map[string]plugin.ProviderFunc{
 // 	"aws":        aws.Provider,
@@ -81,6 +80,7 @@ func makeProviderMap(varName, varType string, items []plugin) string {
 	return output
 }
 
+// makeProvisionerMap
 func makeProvisionerMap(varName, varType string, items []plugin) string {
 	output := ""
 	for _, item := range items {
@@ -93,8 +93,8 @@ func makeProvisionerMap(varName, varType string, items []plugin) string {
 func makeImports(providers, provisioners []plugin) string {
 	plugins := []string{}
 
-	for _, builder := range providers {
-		plugins = append(plugins, fmt.Sprintf("\t%s \"github.com/hashicorp/terraform/%s\"\n", builder.ImportName, filepath.ToSlash(builder.Path)))
+	for _, provider := range providers {
+		plugins = append(plugins, fmt.Sprintf("\t%s \"github.com/hashicorp/terraform/%s\"\n", provider.ImportName, filepath.ToSlash(provider.Path)))
 	}
 
 	for _, provisioner := range provisioners {
@@ -135,13 +135,8 @@ func listDirectories(path string) ([]string, error) {
 	return names, nil
 }
 
-// deriveName determines the name of the plugin (what you'll see in a packer
-// template) based on the filesystem path. We use two rules:
-//
-// Start with                     -> builder/virtualbox/iso
-//
-// 1. Strip the root              -> virtualbox/iso
-// 2. Switch slash / to dash -    -> virtualbox-iso
+// deriveName determines the name of the plugin based on the path hierarchy:
+// provider/aws becomes awsprovider
 func deriveName(root, full string) string {
 	short, _ := filepath.Rel(root, full)
 	bits := strings.Split(short, string(os.PathSeparator))

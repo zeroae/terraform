@@ -1,14 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform/plugin"
-	"github.com/hashicorp/terraform/terraform"
 	"github.com/kardianos/osext"
 )
 
@@ -19,8 +15,6 @@ type InternalPluginCommand struct {
 }
 
 const TFSPACE = "-TFSPACE-"
-
-var pluginRegexp = regexp.MustCompile("terraform-(provider|provisioner)-(.+)")
 
 // BuildPluginCommandString builds a special string for executing internal
 // plugins. It has the following format:
@@ -34,63 +28,42 @@ func BuildPluginCommandString(pluginType, pluginName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pluginString := fmt.Sprintf("terraform-%s-%s", pluginType, pluginName)
-	commandString := fmt.Sprintf("%s%s%s%s%s", terraformPath, TFSPACE, "internal-plugin", TFSPACE, pluginString)
-	return commandString, nil
-}
-
-// parsePluginParts reads a string like terraform-provider-aws and breaks it
-// into pluginType and pluginName. This format corresponds to the filenames used
-// for disk-based plugins that shipped with Terraform < 0.7
-func parsePluginParts(input string) (string, string, error) {
-	parts := pluginRegexp.FindStringSubmatch(input)
-	if len(parts) != 3 {
-		return "", "", fmt.Errorf("Error parsing plugin argument [DEBUG]: %#v", parts)
-	}
-	pluginType := parts[1] // capture group 1 (provider|provisioner)
-	pluginName := parts[2] // capture group 2 (.+)
-	return pluginType, pluginName, nil
+	parts := []string{terraformPath, "internal-plugin", pluginType, pluginName}
+	return strings.Join(parts, TFSPACE), nil
 }
 
 func (c *InternalPluginCommand) Run(args []string) int {
-	if len(args) != 1 {
-		c.Ui.Error("Wrong number of args")
+	if len(args) != 2 {
+		log.Printf("Wrong number of args; expected: terraform internal-plugin pluginType pluginName")
 		return 1
 	}
 
-	if args[0] == "version" {
-		c.Ui.Output(terraform.Version)
-		os.Exit(0)
-	}
-
-	pluginType, pluginName, err := parsePluginParts(args[0])
-	if err != nil {
-		c.Ui.Error(err.Error())
-		return 1
-	}
+	pluginType := args[0]
+	pluginName := args[1]
 
 	switch pluginType {
 	case "provider":
 		pluginFunc, found := InternalProviders[pluginName]
 		if !found {
-			c.Ui.Error(fmt.Sprintf("Could not load provider: %s", pluginName))
+			log.Printf("[ERROR] Could not load provider: %s", pluginName)
 			return 1
 		}
-		log.Printf("Starting provider plugin %s", pluginName)
+		log.Printf("[INFO] Starting provider plugin %s", pluginName)
 		plugin.Serve(&plugin.ServeOpts{
 			ProviderFunc: pluginFunc,
 		})
 	case "provisioner":
 		pluginFunc, found := InternalProvisioners[pluginName]
 		if !found {
-			c.Ui.Error(fmt.Sprintf("Could not load provisioner: %s", pluginName))
+			log.Printf("[ERROR] Could not load provisioner: %s", pluginName)
 			return 1
 		}
-		log.Printf("Starting provisioner plugin %s", pluginName)
+		log.Printf("[INFO] Starting provisioner plugin %s", pluginName)
 		plugin.Serve(&plugin.ServeOpts{
 			ProvisionerFunc: pluginFunc,
 		})
 	default:
+		log.Printf("[ERROR] Invalid plugin type %s", pluginType)
 		return 1
 	}
 
@@ -99,7 +72,7 @@ func (c *InternalPluginCommand) Run(args []string) int {
 
 func (c *InternalPluginCommand) Help() string {
 	helpText := `
-Usage: terraform internal-plugin PLUGIN
+Usage: terraform internal-plugin pluginType pluginName
 
   Runs an internally-compiled version of a plugin from the terraform binary.
 
