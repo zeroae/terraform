@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/terraform/command"
 	tfplugin "github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/kardianos/osext"
@@ -103,6 +104,27 @@ func (c *Config) Discover() error {
 	} else {
 		if err := c.discover(filepath.Dir(exePath)); err != nil {
 			return err
+		}
+	}
+
+	// Finally, we'll fill in any internal plugins that haven't already been
+	// discovered on disk.
+	for name, _ := range command.Providers {
+		if _, found := c.Providers[name]; !found {
+			cmd, err := command.BuildPluginCommandString("provider", name)
+			if err != nil {
+				return err
+			}
+			c.Providers[name] = cmd
+		}
+	}
+	for name, _ := range command.Provisioners {
+		if _, found := c.Provisioners[name]; !found {
+			cmd, err := command.BuildPluginCommandString("provisioner", name)
+			if err != nil {
+				return err
+			}
+			c.Provisioners[name] = cmd
 		}
 	}
 
@@ -283,6 +305,12 @@ func pluginCmd(path string) *exec.Cmd {
 		if v, err := exec.LookPath(path); err == nil {
 			cmdPath = v
 		}
+	}
+
+	// No plugin binary found, so try to use an internal plugin.
+	if strings.Contains(path, command.TFSPACE) {
+		parts := strings.Split(path, command.TFSPACE)
+		return exec.Command(parts[0], parts[1:]...)
 	}
 
 	// If we still don't have a path, then just set it to the original
