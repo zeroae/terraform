@@ -73,12 +73,6 @@ func init() {
 			}, nil
 		},
 
-		"internal-plugin": func() (cli.Command, error) {
-			return &command.InternalPluginCommand{
-				Meta: meta,
-			}, nil
-		},
-
 		"output": func() (cli.Command, error) {
 			return &command.OutputCommand{
 				Meta: meta,

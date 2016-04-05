@@ -19,11 +19,11 @@ quickdev: generate
 # changes will require a rebuild of everything, in which case the dev
 # target should be used.
 core-dev: fmtcheck generate
-	go install github.com/hashicorp/terraform
+	go install -tags 'core' github.com/hashicorp/terraform
 
 # Shorthand for quickly testing the core of Terraform (i.e. "not providers")
 core-test: generate
-	@echo "Testing core packages..." && go test $(shell go list ./... | grep -v -E 'builtin|vendor')
+	@echo "Testing core packages..." && go test -tags 'core' $(shell go list ./... | grep -v -E 'builtin|vendor')
 
 # Shorthand for building and installing just one plugin for local testing.
 # Run as (for example): make plugin-dev PLUGIN=provider-aws
